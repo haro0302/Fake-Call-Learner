@@ -39,6 +39,9 @@ export class AudioEngine {
     if (!this.audioCtx || this.audioCtx.state === 'closed') {
       this.audioCtx = new AudioContext();
     }
+    if (this.audioCtx.state === 'suspended') {
+      this.audioCtx.resume();
+    }
     return this.audioCtx;
   }
 

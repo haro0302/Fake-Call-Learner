@@ -91,7 +91,19 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
   }, [scenario, gender, speed]);
 
   const answerCall = useCallback(() => {
-    setIsRinging(false);
+    // iOS/Android requires audio APIs to be unlocked synchronously within a user gesture.
+    // Calling speak() and resuming AudioContext here ensures subsequent async calls work.
+    if (typeof window !== "undefined") {
+      const ctx = new AudioContext();
+      ctx.resume();
+
+      if (window.speechSynthesis) {
+        const unlock = new SpeechSynthesisUtterance(" ");
+        unlock.volume = 0;
+        window.speechSynthesis.speak(unlock);
+      }
+    }
+
     setPhase("calling");
     startTimer();
     runCallSequence();
