@@ -49,6 +49,37 @@ export default function HomePage() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+        {/* How it works */}
+        <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border border-emerald-100 p-4">
+          <h2 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-3">使い方</h2>
+          <ol className="space-y-2">
+            {[
+              "シナリオを選んでスクリプトを確認する",
+              "「電話をかける」をタップ",
+              "着信音の後、画面をタップして電話に出る",
+              "ビープ音3回 → 流れてくる英語を復唱！",
+            ].map((step, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-sm text-emerald-700">
+                <span className="w-5 h-5 bg-emerald-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        {/* Warning */}
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex gap-3">
+          <span className="text-xl shrink-0">⚠️</span>
+          <div>
+            <h2 className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1">注意事項</h2>
+            <p className="text-sm text-red-700 leading-relaxed">
+              本アプリを人混みの中で使う場合、必ずイヤホンを着用してください。着用せず使うと復唱するはずの英語がスピーカーから盛大に鳴り響きバレてしまいます。
+            </p>
+          </div>
+        </div>
+
         {/* Settings card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-4">
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">声の設定</h2>
@@ -95,37 +126,6 @@ export default function HomePage() {
                 </button>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* How it works */}
-        <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border border-emerald-100 p-4">
-          <h2 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-3">使い方</h2>
-          <ol className="space-y-2">
-            {[
-              "シナリオを選んでスクリプトを確認する",
-              "「電話をかける」をタップ",
-              "着信音の後、画面をタップして電話に出る",
-              "ビープ音3回 → 流れてくる英語を復唱！",
-            ].map((step, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-emerald-700">
-                <span className="w-5 h-5 bg-emerald-200 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                  {i + 1}
-                </span>
-                {step}
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* Warning */}
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex gap-3">
-          <span className="text-xl shrink-0">⚠️</span>
-          <div>
-            <h2 className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1">注意事項</h2>
-            <p className="text-sm text-red-700 leading-relaxed">
-              本アプリを人混みの中で使う場合、必ずイヤホンを着用してください。着用せず使うと復唱するはずの英語がスピーカーから盛大に鳴り響きバレてしまいます。
-            </p>
           </div>
         </div>
 
