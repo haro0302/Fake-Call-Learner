@@ -118,6 +118,17 @@ export default function HomePage() {
           </ol>
         </div>
 
+        {/* Warning */}
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex gap-3">
+          <span className="text-xl shrink-0">⚠️</span>
+          <div>
+            <h2 className="text-xs font-semibold text-red-600 uppercase tracking-wider mb-1">注意事項</h2>
+            <p className="text-sm text-red-700 leading-relaxed">
+              本アプリを人混みの中で使う場合、必ずイヤホンを着用してください。着用せず使うと復唱するはずの英語がスピーカーから盛大に鳴り響きバレてしまいます。
+            </p>
+          </div>
+        </div>
+
         {/* Scenario list */}
         <div>
           <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
