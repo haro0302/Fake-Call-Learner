@@ -2,7 +2,8 @@ export type ScenarioLine = {
   role: 'user' | 'partner';
   text: string;
   japanese: string;
-  duration: number; // ms: for partner = silence length, for user = estimated TTS length (unused, waits for end event)
+  duration: number;
+  pitch?: number; // 0.5–2.0, default 1.0 (for emotional variation)
 };
 
 export type Scenario = {
@@ -25,8 +26,15 @@ export const scenarios: Scenario[] = [
     tag: '日常',
     lines: [
       {
+        role: 'user',
+        text: "Hey Alex! Good timing, I was just thinking about you!",
+        japanese: "あ、アレックス！ちょうどよかった、考えてたとこだよ！",
+        duration: 0,
+        pitch: 1.1,
+      },
+      {
         role: 'partner',
-        text: "Hey, are you free this weekend? The garden is getting pretty wild and I could really use a hand.",
+        text: "Hey! Are you free this weekend? The garden is getting pretty wild and I could really use a hand.",
         japanese: "ねえ、今週末って空いてる？庭がすごいことになってて手伝ってほしいんだけど。",
         duration: 5500,
       },
@@ -35,6 +43,7 @@ export const scenarios: Scenario[] = [
         text: "This weekend? Yeah, I think I'm free on Saturday. What exactly do you need me to do?",
         japanese: "今週末？土曜日なら空いてると思う。具体的に何が必要？",
         duration: 4000,
+        pitch: 1.05,
       },
       {
         role: 'partner',
@@ -47,6 +56,7 @@ export const scenarios: Scenario[] = [
         text: "Sure, no problem. I'll bring my gardening gloves. What time should I come over?",
         japanese: "いいよ、問題ない。軍手持っていくよ。何時に行けばいい？",
         duration: 3500,
+        pitch: 1.0,
       },
       {
         role: 'partner',
@@ -56,9 +66,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "That sounds great. See you Saturday morning at ten then. I'll be there.",
-        japanese: "いいね。土曜の朝10時に行くよ。ちゃんと行くから。",
+        text: "That sounds great. See you Saturday morning at ten. Talk to you later, bye!",
+        japanese: "いいね。土曜の朝10時に行くよ。またね、バイバイ！",
         duration: 3500,
+        pitch: 1.1,
       },
     ],
   },
@@ -71,6 +82,13 @@ export const scenarios: Scenario[] = [
     tag: '日常',
     lines: [
       {
+        role: 'user',
+        text: "Hey Jordan! What's up? Everything okay?",
+        japanese: "やあ、ジョーダン！どうしたの？大丈夫？",
+        duration: 0,
+        pitch: 1.05,
+      },
+      {
         role: 'partner',
         text: "Hi, sorry to call out of the blue. I have a really big favor to ask you.",
         japanese: "もしもし、突然ごめんね。すごくお願いしたいことがあって。",
@@ -78,9 +96,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Hey, no worries at all! What's going on? Is everything okay?",
-        japanese: "全然大丈夫だよ！どうしたの？大丈夫？",
+        text: "Of course, what is it? You know you can always count on me.",
+        japanese: "もちろん、何？いつでも頼っていいよ。",
         duration: 3000,
+        pitch: 1.05,
       },
       {
         role: 'partner',
@@ -90,9 +109,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Of course! You know I love Mochi. I'll be happy to help. Just leave me a spare key.",
-        japanese: "もちろん！モチのこと大好きだもん。喜んで。合鍵を置いておいてね。",
-        duration: 4000,
+        text: "Oh, Mochi! Of course! I'd love to. Just leave me a spare key.",
+        japanese: "モチか！もちろん！喜んで。合鍵を置いておいてね。",
+        duration: 3500,
+        pitch: 1.15,
       },
       {
         role: 'partner',
@@ -102,9 +122,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Got it. Twice a day, morning and evening. Don't worry at all. I'll take great care of him.",
-        japanese: "了解。朝と夜の2回ね。全然心配しないで。ちゃんと面倒見るよ。",
+        text: "Got it. Morning and evening. Mochi's in good hands, don't worry! Safe travels, bye!",
+        japanese: "了解。朝と夜ね。モチは任せて、心配しないで！気をつけてね、バイバイ！",
         duration: 4000,
+        pitch: 1.1,
       },
     ],
   },
@@ -117,6 +138,13 @@ export const scenarios: Scenario[] = [
     tag: '買い物',
     lines: [
       {
+        role: 'user',
+        text: "Hey babe! I'm almost home, what's up?",
+        japanese: "あ、もうすぐ帰るよ！どうしたの？",
+        duration: 0,
+        pitch: 1.05,
+      },
+      {
         role: 'partner',
         text: "Hey! Are you still on your way home? I'm in the middle of cooking dinner.",
         japanese: "ねえ！まだ帰り道？今夕飯作ってるんだけど。",
@@ -124,9 +152,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Hey, I'm on my way home. What's up?",
-        japanese: "あ、今帰り道だよ。どうしたの？",
+        text: "Yeah, I'm on my way home right now. What's going on?",
+        japanese: "うん、今帰り道だよ。どうしたの？",
         duration: 2500,
+        pitch: 1.0,
       },
       {
         role: 'partner',
@@ -136,9 +165,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "What? Milk? Just one carton? Regular milk, not low-fat, right?",
-        japanese: "えっ、牛乳？1パックでいい？低脂肪乳じゃなくて普通のやつ？",
-        duration: 3500,
+        text: "Milk? Just one carton? Regular milk, not low-fat, right?",
+        japanese: "牛乳？1パックでいい？低脂肪乳じゃなくて普通のやつ？",
+        duration: 3000,
+        pitch: 1.0,
       },
       {
         role: 'partner',
@@ -148,9 +178,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Got it. I'll stop by the supermarket and then head straight home. Won't take long.",
-        japanese: "了解。近くのスーパーに寄ってからまっすぐ帰るよ。すぐ戻るから。",
+        text: "Got it! Milk and eggs. I'll be home soon, see you in a bit! Bye!",
+        japanese: "了解！牛乳と卵ね。すぐ帰るよ、もうちょっと待ってて！バイバイ！",
         duration: 3500,
+        pitch: 1.1,
       },
     ],
   },
@@ -163,6 +194,13 @@ export const scenarios: Scenario[] = [
     tag: 'ロマンス',
     lines: [
       {
+        role: 'user',
+        text: "Riley! Oh my gosh, are you here already? Welcome back!",
+        japanese: "ライリー！もう着いたの？おかえり！",
+        duration: 0,
+        pitch: 1.2,
+      },
+      {
         role: 'partner',
         text: "Hi! I just landed! I'm at baggage claim right now. Are you close to the airport?",
         japanese: "もしもし！今着いた！今手荷物受取所にいるんだけど。空港の近くにいる？",
@@ -170,9 +208,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Hey! Welcome back! How was your trip? I'm already here waiting for you.",
-        japanese: "おかえり！旅行どうだった？もう着いて待ってるよ。",
+        text: "Yes! I've been here for twenty minutes already. I missed you so much!",
+        japanese: "うん！もう20分前から来てるよ。すごく会いたかった！",
         duration: 3500,
+        pitch: 1.15,
       },
       {
         role: 'partner',
@@ -182,9 +221,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Of course, I missed you too! I'm parked in Terminal 2. Take your time with your bags.",
-        japanese: "当たり前だよ、私も会いたかった！第2ターミナルに停めてあるよ。荷物は急がなくていいから。",
+        text: "Of course! I'm parked in Terminal 2. Take your time with your bags, no rush.",
+        japanese: "当たり前だよ！第2ターミナルに停めてあるよ。荷物は急がなくていいから。",
         duration: 4000,
+        pitch: 1.05,
       },
       {
         role: 'partner',
@@ -194,9 +234,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "Perfect. I'll be right at the exit waiting for you. Just text me when you're coming out.",
-        japanese: "いいね。出口のところでずっと待ってるよ。出てくるときにメッセージして。",
-        duration: 4000,
+        text: "Perfect! I'll be right at the exit. I can't wait to see you! Hurry up, bye!",
+        japanese: "いいね！出口でずっと待ってるよ。早く会いたい！急いでね、バイバイ！",
+        duration: 3500,
+        pitch: 1.2,
       },
     ],
   },
@@ -209,6 +250,13 @@ export const scenarios: Scenario[] = [
     tag: '仕事',
     lines: [
       {
+        role: 'user',
+        text: "Taylor, hey! What's going on? You're calling me at this hour?",
+        japanese: "テイラー、やあ！どうしたの？この時間に電話？",
+        duration: 0,
+        pitch: 1.0,
+      },
+      {
         role: 'partner',
         text: "Hey, we have a critical situation right now. The payment system just went down and users can't complete any transactions.",
         japanese: "ねえ、今すごく深刻な状況なの。決済システムが落ちてユーザーが取引を完了できなくなってる。",
@@ -216,9 +264,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "What? Since when? How many users are affected right now?",
-        japanese: "えっ？いつから？今どのくらいのユーザーに影響が出てる？",
+        text: "What?! Since when? How many users are affected right now?",
+        japanese: "えっ！いつから？今どのくらいのユーザーに影響が出てる？",
         duration: 3000,
+        pitch: 1.1,
       },
       {
         role: 'partner',
@@ -231,6 +280,7 @@ export const scenarios: Scenario[] = [
         text: "Okay, I'm on it right now. Is the engineering team already looking at the server logs?",
         japanese: "了解、今すぐ対応する。エンジニアチームはもうサーバーログを確認してる？",
         duration: 4000,
+        pitch: 0.95,
       },
       {
         role: 'partner',
@@ -240,9 +290,10 @@ export const scenarios: Scenario[] = [
       },
       {
         role: 'user',
-        text: "I'm pulling up the dashboard right now. Give me two minutes and I'll get back to you with a full update.",
-        japanese: "今すぐダッシュボードを開く。2分待って、詳細な状況をまた連絡するよ。",
-        duration: 4500,
+        text: "I'm already on the dashboard. Two minutes and I'll call you back with an update. Stay on it, bye!",
+        japanese: "もうダッシュボード開いてる。2分後に状況を折り返すよ。引き続き対応して、バイバイ！",
+        duration: 4000,
+        pitch: 0.95,
       },
     ],
   },

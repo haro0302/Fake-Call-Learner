@@ -7,28 +7,21 @@ const SPEED_RATES: Record<PlaybackSpeed, number> = {
   fast: 1.25,
 };
 
-const BEEP_FREQ = 880;
-const BEEP_DURATION_MS = 160;
-const BEEP_GAP_MS = 200;
-
 export class AudioEngine {
   private cancelled = false;
   private synth: SpeechSynthesis | null = null;
   private audioCtx: AudioContext | null = null;
 
-  constructor() {
+  constructor(audioCtx?: AudioContext) {
     if (typeof window !== 'undefined') {
       this.synth = window.speechSynthesis;
+      if (audioCtx) this.audioCtx = audioCtx;
     }
   }
 
   cancel() {
     this.cancelled = true;
     this.synth?.cancel();
-  }
-
-  reset() {
-    this.cancelled = false;
   }
 
   isCancelled() {
@@ -45,7 +38,7 @@ export class AudioEngine {
     return this.audioCtx;
   }
 
-  private playTone(freq: number, durationMs: number): Promise<void> {
+  private playTone(freq: number, durationMs: number, volume = 0.3): Promise<void> {
     return new Promise((resolve) => {
       const ctx = this.ctx();
       const osc = ctx.createOscillator();
@@ -54,21 +47,25 @@ export class AudioEngine {
       gain.connect(ctx.destination);
       osc.type = 'sine';
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
+      // Sharp attack, quick decay for a crisp "beep" sound
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(volume, ctx.currentTime + 0.005);
+      gain.gain.setValueAtTime(volume, ctx.currentTime + durationMs / 1000 - 0.02);
+      gain.gain.linearRampToValueAtTime(0, ctx.currentTime + durationMs / 1000);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + durationMs / 1000);
       setTimeout(resolve, durationMs);
     });
   }
 
+  // 3回のプップップッ（電話通知音風）
   async playBeeps(): Promise<void> {
     for (let i = 0; i < 3; i++) {
       if (this.cancelled) return;
-      await this.playTone(BEEP_FREQ, BEEP_DURATION_MS);
-      if (i < 2) await this.wait(BEEP_GAP_MS);
+      await this.playTone(1000, 120, 0.35);
+      await this.wait(130);
     }
-    if (!this.cancelled) await this.wait(300);
+    await this.wait(400);
   }
 
   async wait(ms: number): Promise<void> {
@@ -87,17 +84,15 @@ export class AudioEngine {
 
       if (gender === 'female') {
         return (
-          en.find((v) =>
-            /female|samantha|karen|victoria|moira|fiona|zira|google\sus\senglish$/i.test(v.name)
-          ) ||
+          en.find((v) => /samantha|karen|victoria|moira|fiona|zira/i.test(v.name)) ||
+          en.find((v) => /female/i.test(v.name)) ||
           en.find((v) => /google/i.test(v.name)) ||
           en[0]
         );
       }
       return (
-        en.find((v) =>
-          /male|alex|daniel|fred|tom|google\sus\senglish\smale/i.test(v.name)
-        ) ||
+        en.find((v) => /alex|daniel|fred|tom/i.test(v.name)) ||
+        en.find((v) => /male/i.test(v.name)) ||
         en.find((v) => /google/i.test(v.name)) ||
         en[0]
       );
@@ -114,7 +109,8 @@ export class AudioEngine {
   async speak(
     text: string,
     voice: SpeechSynthesisVoice | null,
-    speed: PlaybackSpeed
+    speed: PlaybackSpeed,
+    pitch = 1.0,
   ): Promise<void> {
     if (this.cancelled || !this.synth) return;
     const synth = this.synth;
@@ -123,12 +119,11 @@ export class AudioEngine {
       const utt = new SpeechSynthesisUtterance(text);
       if (voice) utt.voice = voice;
       utt.rate = SPEED_RATES[speed];
+      utt.pitch = pitch;
       utt.lang = 'en-US';
       utt.onend = () => resolve();
       utt.onerror = () => resolve();
       synth.speak(utt);
-
-      // Fallback: some browsers stall; resolve after max 15s
       setTimeout(resolve, 15000);
     });
   }
@@ -137,10 +132,10 @@ export class AudioEngine {
     if (this.cancelled) return;
     const end = Date.now() + durationMs;
     while (!this.cancelled && Date.now() < end) {
-      await this.playTone(480, 400);
+      await this.playTone(480, 400, 0.2);
       if (this.cancelled) break;
       await this.wait(200);
-      await this.playTone(480, 400);
+      await this.playTone(480, 400, 0.2);
       if (this.cancelled) break;
       await this.wait(1800);
     }

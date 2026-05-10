@@ -6,7 +6,7 @@ import { getScenario, type ScenarioLine } from "@/lib/scenarios";
 import { AudioEngine, type VoiceGender, type PlaybackSpeed } from "@/lib/audioEngine";
 
 type CallPhase = "incoming" | "calling" | "complete";
-type LinePhase = "partner" | "beeping" | "speaking" | "idle";
+type LinePhase = "partner" | "beeping" | "speaking";
 
 interface ActiveLine {
   index: number;
@@ -26,11 +26,11 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
   const [phase, setPhase] = useState<CallPhase>("incoming");
   const [elapsed, setElapsed] = useState(0);
   const [activeLine, setActiveLine] = useState<ActiveLine | null>(null);
-  const [isRinging, setIsRinging] = useState(true);
 
   const engineRef = useRef<AudioEngine | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedRef = useRef(false);
+  const unlockedCtxRef = useRef<AudioContext | null>(null);
 
   const stopTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -58,7 +58,8 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
     if (!scenario || startedRef.current) return;
     startedRef.current = true;
 
-    const engine = new AudioEngine();
+    // Reuse the AudioContext unlocked in the user gesture handler
+    const engine = new AudioEngine(unlockedCtxRef.current ?? undefined);
     engineRef.current = engine;
 
     const voice = await engine.getVoice(gender);
@@ -71,15 +72,18 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
         setActiveLine({ index: i, phase: "partner", line });
         await engine.wait(line.duration);
       } else {
-        setActiveLine({ index: i, phase: "beeping", line });
-        await engine.playBeeps();
-        if (engine.isCancelled()) break;
+        // For first user line (greeting), no beep needed — start immediately
+        if (i > 0) {
+          setActiveLine({ index: i, phase: "beeping", line });
+          await engine.playBeeps();
+          if (engine.isCancelled()) break;
+        }
 
         setActiveLine({ index: i, phase: "speaking", line });
-        await engine.speak(line.text, voice, speed);
+        await engine.speak(line.text, voice, speed, line.pitch ?? 1.0);
         if (engine.isCancelled()) break;
 
-        await engine.wait(800);
+        await engine.wait(600);
       }
     }
 
@@ -91,11 +95,13 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
   }, [scenario, gender, speed]);
 
   const answerCall = useCallback(() => {
-    // iOS/Android requires audio APIs to be unlocked synchronously within a user gesture.
-    // Calling speak() and resuming AudioContext here ensures subsequent async calls work.
+    // Unlock Web Audio API and Speech Synthesis synchronously within the user gesture.
+    // Mobile browsers (iOS Safari, Android Chrome) block audio from async contexts
+    // unless the API has been explicitly triggered from a direct user interaction first.
     if (typeof window !== "undefined") {
       const ctx = new AudioContext();
       ctx.resume();
+      unlockedCtxRef.current = ctx;
 
       if (window.speechSynthesis) {
         const unlock = new SpeechSynthesisUtterance(" ");
@@ -109,13 +115,11 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
     runCallSequence();
   }, [runCallSequence]);
 
-  // Ringtone
+  // Ringtone on incoming screen
   useEffect(() => {
     if (phase !== "incoming") return;
     const engine = new AudioEngine();
-    const timer = setTimeout(() => {
-      engine.playRingtone(30000);
-    }, 300);
+    const timer = setTimeout(() => engine.playRingtone(30000), 300);
     return () => {
       clearTimeout(timer);
       engine.cancel();
@@ -138,21 +142,26 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
   }
 
   if (phase === "complete") {
-    return <CompleteScreen scenario={scenario} onHome={() => router.push("/")} onRetry={() => router.push(`/call/${id}?gender=${gender}&speed=${speed}`)} />;
+    return (
+      <CompleteScreen
+        scenario={scenario}
+        onHome={() => router.push("/")}
+        // Hard reload to reset all refs and state for a fresh call
+        onRetry={() => { window.location.href = `/call/${id}?gender=${gender}&speed=${speed}`; }}
+      />
+    );
   }
 
   if (phase === "incoming") {
     return (
       <IncomingScreen
         scenario={scenario}
-        isRinging={isRinging}
         onAnswer={answerCall}
         onDecline={() => router.push("/")}
       />
     );
   }
 
-  // Calling phase
   return (
     <CallingScreen
       scenario={scenario}
@@ -168,27 +177,21 @@ export default function CallPage({ params }: { params: Promise<{ id: string }> }
 
 function IncomingScreen({
   scenario,
-  isRinging,
   onAnswer,
   onDecline,
 }: {
-  scenario: ReturnType<typeof getScenario>;
-  isRinging: boolean;
+  scenario: NonNullable<ReturnType<typeof getScenario>>;
   onAnswer: () => void;
   onDecline: () => void;
 }) {
-  if (!scenario) return null;
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-between py-16 px-6">
-      {/* Caller info */}
       <div className="flex flex-col items-center gap-4 mt-8">
         <p className="text-gray-400 text-sm tracking-wide">着信中...</p>
         <div className="relative">
-          {/* Wave rings */}
           <div className="absolute inset-0 rounded-full bg-white/10 animate-ring-wave" />
           <div className="absolute inset-0 rounded-full bg-white/10 animate-ring-wave-delay" />
           <div className="absolute inset-0 rounded-full bg-white/10 animate-ring-wave-delay2" />
-          {/* Avatar */}
           <div className="w-28 h-28 bg-gray-700 rounded-full flex items-center justify-center text-6xl relative animate-ring-pulse">
             {scenario.callerEmoji}
           </div>
@@ -199,12 +202,9 @@ function IncomingScreen({
         </div>
       </div>
 
-      {/* Swipe hint */}
       <p className="text-gray-500 text-xs">タップして電話に出る</p>
 
-      {/* Buttons */}
       <div className="flex items-center justify-center gap-20 w-full">
-        {/* Decline */}
         <div className="flex flex-col items-center gap-2">
           <button
             onClick={onDecline}
@@ -214,7 +214,6 @@ function IncomingScreen({
           </button>
           <span className="text-gray-400 text-xs">拒否</span>
         </div>
-        {/* Answer */}
         <div className="flex flex-col items-center gap-2">
           <button
             onClick={onAnswer}
@@ -238,21 +237,18 @@ function CallingScreen({
   formatTime,
   onEnd,
 }: {
-  scenario: ReturnType<typeof getScenario>;
+  scenario: NonNullable<ReturnType<typeof getScenario>>;
   elapsed: number;
   activeLine: ActiveLine | null;
   formatTime: (s: number) => string;
   onEnd: () => void;
 }) {
-  if (!scenario) return null;
-
-  const isUserTurn = activeLine?.phase === "speaking" || activeLine?.phase === "beeping";
   const isPartnerTurn = activeLine?.phase === "partner";
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-between py-12 px-6">
-      {/* Top: caller info */}
-      <div className="flex flex-col items-center gap-3">
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-between py-10 px-6">
+      {/* Top: caller info + earphone note */}
+      <div className="flex flex-col items-center gap-3 w-full">
         <div className="w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center text-4xl">
           {scenario.callerEmoji}
         </div>
@@ -260,10 +256,15 @@ function CallingScreen({
           <h2 className="text-2xl font-bold text-white">{scenario.callerName}</h2>
           <p className="text-green-400 text-sm mt-0.5">{formatTime(elapsed)}</p>
         </div>
+        {/* Earphone recommendation */}
+        <div className="flex items-center gap-1.5 bg-white/5 rounded-full px-3 py-1">
+          <span className="text-sm">🎧</span>
+          <span className="text-gray-400 text-xs">イアホン推奨（ブラウザの制限でスピーカーから音が出ます）</span>
+        </div>
       </div>
 
       {/* Middle: status / speech bubble */}
-      <div className="w-full max-w-sm min-h-40 flex flex-col items-center justify-center gap-4">
+      <div className="w-full max-w-sm min-h-44 flex flex-col items-center justify-center gap-4">
         {isPartnerTurn && (
           <div className="animate-fade-in text-center">
             <p className="text-gray-400 text-sm mb-3">相手が話しています</p>
@@ -278,12 +279,12 @@ function CallingScreen({
         {activeLine?.phase === "beeping" && (
           <div className="animate-fade-in text-center">
             <p className="text-yellow-400 text-sm font-medium">あなたのターン…</p>
-            <div className="flex items-center gap-2 mt-2 justify-center">
+            <div className="flex items-center gap-3 mt-3 justify-center">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
                   className="w-3 h-3 bg-yellow-400 rounded-full"
-                  style={{ animation: `dot-bounce 0.6s ${i * 0.2}s infinite` }}
+                  style={{ animation: `dot-bounce 0.38s ${i * 0.25}s infinite` }}
                 />
               ))}
             </div>
@@ -310,14 +311,12 @@ function CallingScreen({
       </div>
 
       {/* Bottom: controls */}
-      <div className="flex flex-col items-center gap-6 w-full">
-        {/* Dummy controls row */}
+      <div className="flex flex-col items-center gap-5 w-full">
         <div className="flex gap-10">
           <DummyButton icon="🔇" label="ミュート" />
           <DummyButton icon="🔊" label="スピーカー" />
           <DummyButton icon="⌨️" label="キーパッド" />
         </div>
-        {/* End call */}
         <button
           onClick={onEnd}
           className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
@@ -348,14 +347,12 @@ function CompleteScreen({
   onHome,
   onRetry,
 }: {
-  scenario: ReturnType<typeof getScenario>;
+  scenario: NonNullable<ReturnType<typeof getScenario>>;
   onHome: () => void;
   onRetry: () => void;
 }) {
-  if (!scenario) return null;
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top banner */}
       <div className="bg-gray-900 text-white px-4 py-8 text-center">
         <div className="text-5xl mb-3">🎉</div>
         <h2 className="text-xl font-bold">お疲れ様でした！</h2>
@@ -363,7 +360,6 @@ function CompleteScreen({
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-5">
-        {/* Full script review */}
         <div>
           <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
             今回の会話スクリプト
@@ -395,7 +391,6 @@ function CompleteScreen({
           </div>
         </div>
 
-        {/* Actions */}
         <div className="space-y-3 pt-2">
           <button
             onClick={onRetry}
