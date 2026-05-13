@@ -49,6 +49,9 @@ export default function HomePage() {
       </div>
 
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+        {/* Demo video */}
+        <DemoVideo />
+
         {/* How it works */}
         <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl border border-emerald-100 p-4">
           <h2 className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-3">使い方</h2>
@@ -173,5 +176,64 @@ export default function HomePage() {
         </p>
       </div>
     </main>
+  );
+}
+
+function DemoVideo() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      {/* Inline preview: autoplay, loop, muted */}
+      <button
+        onClick={() => setOpen(true)}
+        className="w-full rounded-2xl overflow-hidden block relative focus:outline-none"
+        aria-label="使い方動画を再生"
+      >
+        <video
+          src="/demo.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full rounded-2xl object-cover"
+        />
+        {/* Play hint overlay */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-2xl">
+          <div className="bg-white/90 rounded-full w-12 h-12 flex items-center justify-center shadow-md">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#111">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      </button>
+
+      {/* Modal: full video with sound */}
+      {open && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl overflow-hidden relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <video
+              src="/demo.mp4"
+              controls
+              autoPlay
+              playsInline
+              className="w-full rounded-2xl"
+            />
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute top-3 right-3 bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg leading-none"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
